@@ -1,7 +1,8 @@
 module Histograms
 using Plots
 using JLD
-export H1D, H2D, fill
+import Base: +
+export H1D, H2D, hfill!
 
 type Histogram1D
     """
@@ -19,37 +20,73 @@ type Histogram1D
     torques
     inertials
 end
+# the edges must be sorted
+# we add two bins, for underflow and overflow
+Histogram1D(nBins, min, max) = Histogram1D(
+      # the last edge is the overflow
+      # linspace gives us nBins _edges_
+      # we'll add 1 to get the right number of bins
+      linspace(min, max, nBins+1)
+    , zeros(Int64, nBins+2)
+    , zeros(nBins+2)
+    , zeros(nBins+2)
+    , zeros(nBins+2)
+    , zeros(nBins+2)
+)
+H1D(nBins, min, max) = Histogram1D(nBins, min, max)
 
-H1D() = Histogram1D()
-H2D() = Histogram2D()
-
-function fill(h::Histogram1D, x, weight=1.)
-    index = find_index(h, x)
-    if index < 0
-        return
-    end
-    h.entries[index] += 1
-    h.weights[index] += weight
-    h.weights_squared[index] += weight*weight
-    h.torques[index] += x*weight
-    h.inertials[index] += x*x*weight
+type Histogram2D
+    # this is just a list of vectors (x, y)
+    binEdges
+    entries
+    weights
+    weights_squared
+    torquesX
+    torquesY
+    inertialsX
+    inertialsY
 end
+H2D(nBinsX, minX, maxX, nBinsY, minY, maxY) = Histogram2D(nBinsX, minX, maxX, nBinsY, minY, maxY)
+Histogram2D(nBinsX, minX, maxX, nBinsY, minY, maxY) = Histogram2D(
+      (linspace(minX, maxX, nBinsX+1), linspace(minY, maxY, nBinsY+1))
+    , zeros(Int64, (nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+    , zeros((nBinsX+2, nBinsY+2))
+)
 
 function find_index(h::Histogram1D, x):
     """
     Returns the index of the bin that this item would be put into
     """
-    if x < self.binEdges[0]
-        return -1
+    # underflow
+    if x < h.binEdges[1]
+        return 1
     end
     # we shift the index of the binEgdes by starting at 1
     # thats why we return i rather than i-1
-    for (i, edge) in enumerate(self.binEdges[1:end])
-        if x < edge
-            return i
+    @inbounds for i in 2:length(h.binEdges)
+        if x < h.binEdges[i]
+            return i-1
         end
     end
+    # overflow
+    return length(h.binEdges)+1
 end
+
+function hfill!(h::Histogram1D, x, weight=1.)
+    index = find_index(h, x)
+    h.entries[index] += 1
+    h.weights[index] += weight
+    h.weights_squared[index] += weight*weight
+    h.torques[index] += x*weight
+    h.inertials[index] += x*x*weight
+    return
+end
+
 
 stddev(h::Histogram1D) = sum(h.torques)
 mean(h::Histogram1D) = sum(h.entries)
@@ -64,40 +101,39 @@ function +(h1::Histogram1D, h2::Histogram1D)
     return Histogram1D(edges, entries, weights, weights_squared)
 end
 
-type Histogram2D
-    # this is just a list of vectors (x, y)
-    binEdges
-    entries
-    weights
-    weights_squared
-    torquesX
-    torquesY
-    inertialsX
-    inertialsY
-end
 
 function find_index(h::Histogram2D, x, y)
-    if x < self.binEdges[0]
-        return -1
+    # underflow
+    i = 0
+    if x < h.binEdges[1][1]
+        i = 1
+    end
+    j = 0
+    if y < h.binEdges[2][1]
+        j = 1
     end
     # we shift the index of the binEgdes by starting at 1
     # thats why we return i rather than i-1
-    for (i, edge) in enumerate(self.binEdges[1,1:end])
-        if x < edge
-            break
+    if i == 0
+        @inbounds for i in 2:length(h.binEdges[1])
+            if x < h.binEdges[1][i]
+                break
+            end
         end
     end
     # we shift the index of the binEgdes by starting at 1
     # thats why we return i rather than i-1
-    for (j, edge) in enumerate(self.binEdges[2,1:end])
-        if y < edge
-            break
+    if j == 0
+        @inbounds for j in 2:length(h.binEdges[2])
+            if y < h.binEdges[2][j]
+                break
+            end
         end
     end
     return i,j
 end
 
-function fill(h::Histogram2D, x, y, weight = 1.0)
+function hfill!(h::Histogram2D, x, y, weight = 1.0)
     i,j = find_index(h, x, y)
     h.entries[i,j] += 1
     h.weights[i,j] += weight
