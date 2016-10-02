@@ -1,4 +1,5 @@
-# Histograms
+# Histograms.jl
+Facilities for histogramming of transient data
 
 [![Build Status](https://travis-ci.org/jstrube/Histograms.jl.svg?branch=master)](https://travis-ci.org/jstrube/Histograms.jl)
 
