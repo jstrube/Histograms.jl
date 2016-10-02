@@ -14,3 +14,4 @@ y = randn(NENTRIES)
 for i = 1:NENTRIES
     hfill!(h2, x[i], y[i])
 end
+@test sum(h2.entries) == NENTRIES
