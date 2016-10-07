@@ -2,7 +2,7 @@ module Histograms
 using Plots
 using JLD
 import Base: +
-export H1D, H2D, hfill!
+export H1D, H2D, hfill!, hsave
 
 type Histogram1D
     """
@@ -169,9 +169,16 @@ function plot(h::Histogram2D)
     heatmap(xs,ys,z,aspect_ratio=1)
 end
 
-function save(h::Histogram2D, histname, filename)
+function hsave(h::Histogram1D, histname, filename)
     jldopen(filename, "w") do file
-        addrequire(file, Histogram)
+        addrequire(file, Histograms)
+        write(file, histname, h)
+    end
+end
+
+function hsave(h::Histogram2D, histname, filename)
+    jldopen(filename, "w") do file
+        addrequire(file, Histograms)
         write(file, histname, h)
     end
 end
