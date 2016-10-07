@@ -163,10 +163,10 @@ function plot(h::Histogram1D)
 end
 
 function plot(h::Histogram2D)
-    xs = h.egdes[1]
-    ys = h.edges[2]
-    z = h.weights
-    heatmap(xs,ys,z,aspect_ratio=1)
+    xs = h.binEdges[1]
+    ys = h.binEdges[2]
+    z = h.weights'[1:end-1, 1:end-1]
+    heatmap(xs,ys,z)
 end
 
 function hsave(h::Histogram1D, histname, filename)
