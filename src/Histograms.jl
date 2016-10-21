@@ -101,6 +101,24 @@ function +(h1::Histogram1D, h2::Histogram1D)
     return Histogram1D(edges, entries, weights, weights_squared)
 end
 
+function +(h1::Histogram2D, h2::Histogram2D)
+    if ! all(self.binEdges[1] == other.binEdges[1])
+        println("ERROR! The bin egdes must be the same for both histograms")
+        return
+    end
+    if ! all(self.binEdges[2] == other.binEdges[2])
+        println("ERROR! The bin egdes must be the same for both histograms")
+        return
+    end
+    entries = h1.entries + h2.entries
+    weights = h1.weights + h2.weights
+    weights_squared = h1.weights_squared + h2.weights_squared
+    torquesX = h1.torquesX + h2.torquesX
+    torquesY = h1.torquesY + h2.torquesY
+    inertialsX = h1.inertialsX + h2.inertialsX
+    inertialsY = h1.inertialsY + h2.inertialsY
+    return Histogram2D(entries, weights, weights_squared, torquesX, torquesY, inertialsX, inertialsY)
+end
 
 function find_index(h::Histogram2D, x, y)
     # underflow
