@@ -8,10 +8,7 @@ type Histogram1D
     """
     This is a one-dimensional histogram with full outlier handling.
     The convention for numbering the bins is:
-    start from 1.
-    If you care about all entries,
-    set the left edge of the first bin to -inf,
-    the right edge of the last bin to +inf
+    start from 2, underflow bin is bin 1, overflow bin is nBins+2.
     """
     binEdges
     entries
@@ -66,11 +63,11 @@ function find_index(h::Histogram1D, x):
     if x < h.binEdges[1]
         return 1
     end
-    # we shift the index of the binEgdes by starting at 1
-    # thats why we return i rather than i-1
+# we have two extra bins, one for underflow(1) and one for overflow(end+1)
+# this means we have one more bin than we have edges
     @inbounds for i in 2:length(h.binEdges)
         if x < h.binEdges[i]
-            return i-1
+            return i
         end
     end
     # overflow
@@ -130,8 +127,8 @@ function find_index(h::Histogram2D, x, y)
     if y < h.binEdges[2][1]
         j = 1
     end
-    # we shift the index of the binEgdes by starting at 1
-    # thats why we return i rather than i-1
+# we have two extra bins, one for underflow(1) and one for overflow(end+1)
+# this means we have one more bin than we have edges
     if i == 0
         @inbounds for i in 2:length(h.binEdges[1])
             if x < h.binEdges[1][i]
@@ -147,6 +144,12 @@ function find_index(h::Histogram2D, x, y)
                 break
             end
         end
+    end
+    if i == 0
+        i = length(h.binEdges[1]) + 1
+    end
+    if j == 0
+        j = length(h.binEdges[2]) + 1
     end
     return i,j
 end
