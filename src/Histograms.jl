@@ -2,7 +2,7 @@ module Histograms
 using Plots
 using JLD
 import Base: +
-export H1D, H2D, hfill!, hsave
+export H1D, H2D, hfill!, hsave, add!
 
 type Histogram1D
     """
@@ -88,7 +88,7 @@ end
 stddev(h::Histogram1D) = sum(h.torques)
 mean(h::Histogram1D) = sum(h.entries)
 function +(h1::Histogram1D, h2::Histogram1D)
-    if ! all(self.binEdges == other.binEdges)
+    if ! all(h1.binEdges == h2.binEdges)
         println("ERROR! The bin egdes must be the same for both histograms")
         return
     end
@@ -99,11 +99,11 @@ function +(h1::Histogram1D, h2::Histogram1D)
 end
 
 function +(h1::Histogram2D, h2::Histogram2D)
-    if ! all(self.binEdges[1] == other.binEdges[1])
+    if ! all(h1.binEdges[1] == h2.binEdges[1])
         println("ERROR! The bin egdes must be the same for both histograms")
         return Histogram2D()
     end
-    if ! all(self.binEdges[2] == other.binEdges[2])
+    if ! all(h1.binEdges[2] == h2.binEdges[2])
         println("ERROR! The bin egdes must be the same for both histograms")
         return Histogram2D()
     end
@@ -115,6 +115,25 @@ function +(h1::Histogram2D, h2::Histogram2D)
     inertialsX = h1.inertialsX + h2.inertialsX
     inertialsY = h1.inertialsY + h2.inertialsY
     return Histogram2D(entries, weights, weights_squared, torquesX, torquesY, inertialsX, inertialsY)
+end
+
+function add!(h1::Histogram2D, h2::Histogram2D)
+    if ! all(h1.binEdges[1] == h2.binEdges[1])
+        println("ERROR! The bin egdes must be the same for both histograms")
+        return
+    end
+    if ! all(h1.binEdges[2] == h2.binEdges[2])
+        println("ERROR! The bin egdes must be the same for both histograms")
+        return
+    end
+    h1.entries .+= h2.entries
+    h1.weights .+= h2.weights
+    h1.weights_squared .+= h2.weights_squared
+    h1.torquesX .+= h2.torquesX
+    h1.torquesY .+= h2.torquesY
+    h1.inertialsX .+= h2.inertialsX
+    h1.inertialsY .+= h2.inertialsY
+    return
 end
 
 function find_index(h::Histogram2D, x, y)
