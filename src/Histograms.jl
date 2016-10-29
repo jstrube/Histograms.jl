@@ -44,6 +44,7 @@ type Histogram2D
     inertialsY
 end
 H2D(nBinsX, minX, maxX, nBinsY, minY, maxY) = Histogram2D(nBinsX, minX, maxX, nBinsY, minY, maxY)
+Histogram2D() = Histogram2D(0,0.0,0.0, 0,0.0,0.0)
 Histogram2D(nBinsX, minX, maxX, nBinsY, minY, maxY) = Histogram2D(
       (linspace(minX, maxX, nBinsX+1), linspace(minY, maxY, nBinsY+1))
     , zeros(Int64, (nBinsX+2, nBinsY+2))
@@ -84,7 +85,6 @@ function hfill!(h::Histogram1D, x, weight=1.)
     return
 end
 
-
 stddev(h::Histogram1D) = sum(h.torques)
 mean(h::Histogram1D) = sum(h.entries)
 function +(h1::Histogram1D, h2::Histogram1D)
@@ -101,11 +101,11 @@ end
 function +(h1::Histogram2D, h2::Histogram2D)
     if ! all(self.binEdges[1] == other.binEdges[1])
         println("ERROR! The bin egdes must be the same for both histograms")
-        return
+        return Histogram2D()
     end
     if ! all(self.binEdges[2] == other.binEdges[2])
         println("ERROR! The bin egdes must be the same for both histograms")
-        return
+        return Histogram2D()
     end
     entries = h1.entries + h2.entries
     weights = h1.weights + h2.weights
@@ -165,17 +165,18 @@ function hfill!(h::Histogram2D, x, y, weight = 1.0)
     h.inertialsY[i,j] += y^2 * weight
 end
 
+# only use the in-range bins to compute the statistics
 function getStatisticSet(h::Histogram2D)
-    weights = sum(h.weights)
-	torquesX = sum(h.torquesX)
-	torquesY = sum(h.torquesY)
+    weights = sum(h.weights[2:end-1])
+	torquesX = sum(h.torquesX[2:end-1])
+	torquesY = sum(h.torquesY[2:end-1])
 
-	entries = h.entries
+	entries = h.entries[2:end-1]
 	meanX = torquesX / weights
 	meanY = torquesY / weights
 
-    rmsX = sqrt((sum(h.inertialsX) - torquesX^2 / weights) / weights)
-	rmsY = sqrt((sum(h.inertialsY) - torquesY^2 / weights) / weights)
+    rmsX = sqrt((sum(h.inertialsX[2:end-1]) - torquesX^2 / weights) / weights)
+	rmsY = sqrt((sum(h.inertialsY[2:end-1]) - torquesY^2 / weights) / weights)
 	return entries, meanX, meanY, rmsX, rmsY
 end
 
