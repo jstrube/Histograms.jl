@@ -9,7 +9,7 @@ Facilities for histogramming of transient data
 
 The bins are chosen ahead of time in the constructor.
 Bins are implemented as an array of left edges. Bin[1] is the underflow, bin[end] is the overflow bin.
-The constructor `H1D(100, 0, 1)` creates the bin edges as `linspace(0, 1, 101)`, and the contents as zeros(102).
+The constructor `H1D(100, 0, 1)` creates the bin edges as `linspace(0, 1, 101)`, and the contents as `zeros(102)`.
 Data is then accumulated in `bins[2:end-1]` (except for underflow and overflow, obviously).
 
 TODO: still need to make the -1 offset between bins and edges more difficult to get wrong.
